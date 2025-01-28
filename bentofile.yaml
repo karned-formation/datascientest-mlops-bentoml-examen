@@ -1,0 +1,20 @@
+service: "service:lr_service"
+description: "Service for predicting admission"
+labels:
+  owner: "Killian"
+  project: "admission_prediction"
+
+include:
+  - service.py
+  - scaler_std.pkl
+
+python:
+  packages:
+    - bentoml
+    - joblib
+    - pandas
+    - pydantic
+    - starlette
+    - pyjwt
+    - datetime
+    - scikit-learn

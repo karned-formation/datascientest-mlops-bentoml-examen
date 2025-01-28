@@ -16,7 +16,7 @@ USERS = {
     "user456": "password456"
 }
 
-scaler = joblib.load('../models/scaler_std.pkl')
+scaler_std = joblib.load("scaler_std.pkl")
 
 
 class JWTAuthMiddleware(BaseHTTPMiddleware):
@@ -85,12 +85,12 @@ async def classify(input_data: InputModel) -> dict:
         }
     )
     colonnes = ['GRE Score', 'TOEFL Score', 'CGPA']
-    scaler_std = joblib.load('../models/scaler_std.pkl')
+    scaler_std = joblib.load('scaler_std.pkl')
     df[colonnes] = scaler_std.transform(df[colonnes])
     result = await linear_regression_runner.predict.async_run(df)
 
     return {
-        "prediction": result.tolist()
+        "prediction": result[0][0]
     }
 
 

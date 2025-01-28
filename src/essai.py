@@ -1,7 +1,8 @@
 import requests
 
-login_url = "http://127.0.0.1:3003/login"
-predict_url = "http://127.0.0.1:3003/v1/models/lr/predict"
+port = 3004
+login_url = f"http://127.0.0.1:{port}/login"
+predict_url = f"http://127.0.0.1:{port}/v1/models/lr/predict"
 
 credentials = {
     "username": "user123",

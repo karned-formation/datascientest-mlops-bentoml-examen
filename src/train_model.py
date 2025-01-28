@@ -17,7 +17,7 @@ X_train[colonnes] = scaler_std.fit_transform(X_train[colonnes])
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-joblib.dump(scaler_std, '../models/scaler_std.pkl')
+joblib.dump(scaler_std, '../scaler_std.pkl')
 bentoml.sklearn.save_model("linear_regression", model)
 
 X_test[colonnes] = scaler_std.transform(X_test[colonnes])
