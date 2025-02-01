@@ -2,68 +2,31 @@ import joblib
 import bentoml
 import pandas as pd
 from bentoml.io import JSON
-from pydantic import BaseModel
 from starlette.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-import jwt
-from datetime import datetime, timedelta
 
-JWT_SECRET_KEY = "your_jwt_secret_key_here"
-JWT_ALGORITHM = "HS256"
-
-USERS = {
-    "user123": "password123",
-    "user456": "password456"
-}
+from config import USERS
+from middleware.token_middleware import JWTAuthMiddleware
+from models.credential_model import CredentialModel
+from models.input_model import InputModel
+from models.response_model import ResponseModel
+from models.response_token_model import ResponseTokenModel
+from src.token import create_jwt_token
 
 scaler_std = joblib.load("scaler_std.pkl")
 
-
-class JWTAuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch( self, request, call_next ):
-        if request.url.path == "/v1/models/lr/predict":
-            token = request.headers.get("Authorization")
-            if not token:
-                return JSONResponse(status_code=401, content={"detail": "Missing authentication token"})
-
-            try:
-                token = token.split()[1]  # Remove 'Bearer ' prefix
-                payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            except jwt.ExpiredSignatureError:
-                return JSONResponse(status_code=401, content={"detail": "Token has expired"})
-            except jwt.InvalidTokenError:
-                return JSONResponse(status_code=401, content={"detail": "Invalid token"})
-
-            request.state.user = payload.get("sub")
-
-        response = await call_next(request)
-        return response
-
-
-class InputModel(BaseModel):
-    GRE_Score: int
-    TOEFL_Score: int
-    University_Rating: float
-    SOP: float
-    LOR: float
-    CGPA: float
-    Research: int
-
-
 linear_regression_runner = bentoml.sklearn.get("linear_regression:qnxg6mg5j6gkotsj").to_runner()
-
 lr_service = bentoml.Service("lr_service", runners=[linear_regression_runner])
-
 lr_service.add_asgi_middleware(JWTAuthMiddleware)
 
 
-@lr_service.api(input=JSON(), output=JSON())
-def login( credentials: dict ) -> dict:
-    username = credentials.get("username")
-    password = credentials.get("password")
-
-    if username in USERS and USERS[username] == password:
-        token = create_jwt_token(username)
+@lr_service.api(
+    input=JSON(pydantic_model=CredentialModel),
+    output=JSON(pydantic_model=ResponseTokenModel),
+    route='login'
+)
+def login( credentials: CredentialModel ) -> dict:
+    if credentials.username in USERS and USERS[credentials.username] == credentials.password:
+        token = create_jwt_token(credentials.username)
         return {"token": token}
     else:
         return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
@@ -71,7 +34,7 @@ def login( credentials: dict ) -> dict:
 
 @lr_service.api(
     input=JSON(pydantic_model=InputModel),
-    output=JSON(),
+    output=JSON(pydantic_model=ResponseModel),
     route='v1/models/lr/predict'
 )
 async def classify(input_data: InputModel) -> dict:
@@ -94,11 +57,4 @@ async def classify(input_data: InputModel) -> dict:
     }
 
 
-def create_jwt_token( user_id: str ):
-    expiration = datetime.utcnow() + timedelta(hours=1)
-    payload = {
-        "sub": user_id,
-        "exp": expiration
-    }
-    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
-    return token
+
