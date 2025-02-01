@@ -2,7 +2,7 @@ import joblib
 import bentoml
 import pandas as pd
 from bentoml.io import JSON
-from starlette.responses import JSONResponse
+from fastapi import HTTPException
 
 from config import USERS
 from middleware.token_middleware import JWTAuthMiddleware
@@ -29,7 +29,7 @@ def login( credentials: CredentialModel ) -> dict:
         token = create_jwt_token(credentials.username)
         return {"token": token}
     else:
-        return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @lr_service.api(
