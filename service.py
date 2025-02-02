@@ -1,8 +1,9 @@
+import logging
+
 import joblib
 import bentoml
 import pandas as pd
 from bentoml.io import JSON
-from fastapi import HTTPException
 
 from config import USERS
 from middleware.token_middleware import JWTAuthMiddleware
@@ -11,6 +12,9 @@ from models.input_model import InputModel
 from models.response_model import ResponseModel
 from models.response_token_model import ResponseTokenModel
 from src.token import create_jwt_token
+from starlette.responses import JSONResponse
+
+logging.basicConfig(level=logging.INFO)
 
 scaler_std = joblib.load("scaler_std.pkl")
 
@@ -25,11 +29,13 @@ lr_service.add_asgi_middleware(JWTAuthMiddleware)
     route='login'
 )
 def login( credentials: CredentialModel ) -> dict:
+    logging.info('######################## je suis là')
     if credentials.username in USERS and USERS[credentials.username] == credentials.password:
         token = create_jwt_token(credentials.username)
         return {"token": token}
     else:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        logging.info('######################## je suis ici')
+        return JSONResponse(status_code=401, content={"detail": "Invalid credential"})
 
 
 @lr_service.api(

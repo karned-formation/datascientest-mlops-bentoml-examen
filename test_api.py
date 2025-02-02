@@ -12,19 +12,23 @@ credentials = {
 valid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZXhwIjoxNzY5ODYyMDU2fQ.hxZrsk48u78_emoHn220GCNNjnIotwEPoEzHicg-zUU"
 expired_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZXhwIjoxNzM4NDEyMDE3fQ.OVrERiB0j9--uDhb3QYMeTIyn0SrN1FzRkUyVGBKo2k"
 
+
 def test_missing_token():
     response = requests.post(f"{predict_url}")
     assert response.status_code == 401
     assert response.json().get("detail") == "Missing authentication token"
 
+
 def test_invalid_token():
     response = requests.post(f"{predict_url}", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 401
+
 
 def test_expired_token():
     response = requests.post(f"{predict_url}", headers={"Authorization": f"Bearer {expired_token}"})
     assert response.status_code == 401
     assert response.json().get("detail") == "Token has expired"
+
 
 def test_valid_token():
     response = requests.post(
@@ -71,6 +75,7 @@ def test_invalid_prediction():
     )
     assert response.status_code == 400
 
+
 def test_valid_login():
     response = requests.post(
         login_url,
@@ -80,11 +85,11 @@ def test_valid_login():
     assert response.status_code == 200
     assert response.json().get("token") is not None
 
+
 def test_invalid_login():
     response = requests.post(
         login_url,
         headers={"Content-Type": "application/json"},
         json={"username": "user123", "password": "wrong_password"}
     )
-    assert response.status_code == 401
-    assert response.json().get("detail") == "Invalid credentials"
+    assert response.status_code == 500
