@@ -1,6 +1,6 @@
 import requests
 
-port = 3005
+port = 3006
 login_url = f"http://127.0.0.1:{port}/login"
 predict_url = f"http://127.0.0.1:{port}/v1/models/lr/predict"
 
